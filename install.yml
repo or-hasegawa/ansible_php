@@ -1,0 +1,109 @@
+---
+- hosts: localhost
+  connection: local
+  become: yes
+  become_user: root
+  become_method: su
+  tasks:
+
+    - name: Remiをインストールする
+      yum: 
+        name=http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
+        state=present
+
+    - name: phpをインストール
+      with_items:
+        - php
+        - php-mbstring
+        - php-mysql
+        - php-devel
+        - php-pecl-xdebug
+        - php-opcache
+        - php-pecl-apcu
+        - php-xml
+        - php-gd
+        - php-phpunit-PHPUnit
+      yum: name={{ item }} state=present enablerepo=remi,remi-php56
+
+    - name: phpのエラーレポーティングの設定を編集
+      replace:
+        dest=/etc/php.ini
+        regexp="error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT"
+        replace="error_reporting = E_ALL | E_STRICT"
+      notify: restart httpd
+
+    - name: phpのdisplay_errorsをon
+      replace:
+        dest=/etc/php.ini
+        regexp="display_errors = Off"
+        replace="display_errors = On"
+      notify: restart httpd
+
+    - name: phpのlog_errorをon
+      replace:
+        dest=/etc/php.ini
+        regexp="display_errors = Off"
+        replace="display_errors = On"
+      notify: restart httpd
+
+    - name: phpのlog_errorを
+      replace:
+        dest=/etc/php.ini
+        regexp=";error_log = php_errors.log"
+        replace="error_log = php_errors.log"
+      notify: restart httpd
+
+    - name: mbstring.languageをjapaneseに
+      replace:
+        dest=/etc/php.ini
+        regexp=";mbstring.language = Japanese"
+        replace="mbstring.language = Japanese"
+      notify: restart httpd
+
+    - name: mbstring.languageをjapaneseに
+      replace:
+        dest=/etc/php.ini
+        regexp=";mbstring.internal_encoding ="
+        replace="mbstring.internal_encoding = UTF-8"
+      notify: restart httpd
+
+    - name: mbstring.encoding_translation を明示的にOff
+      replace:
+        dest=/etc/php.ini
+        regexp=";mbstring.encoding_translation = Off"
+        replace="mbstring.encoding_translation = Off"
+      notify: restart httpd
+
+    - name: mbstring.http_inputを明示的にpass
+      replace:
+        dest=/etc/php.ini
+        regexp=";mbstring.http_input ="
+        replace="mbstring.http_input = pass"
+      notify: restart httpd
+
+    - name: mbstring.http_outputを明示的にpass
+      replace:
+        dest=/etc/php.ini
+        regexp=";mbstring.http_output ="
+        replace="mbstring.http_output = pass"
+      notify: restart httpd
+
+    - name: mbstring.detect_orderを明示的にpass
+      replace:
+        dest=/etc/php.ini
+        regexp=";mbstring.detect_order = auto"
+        replace="mbstring.detect_order = auto"
+      notify: restart httpd
+
+    - name: timezoneを設定
+      replace:
+        dest=/etc/php.ini
+        regexp=";date.timezone ="
+        replace="date.timezone = Asia/Tokyo"
+      notify: restart httpd
+
+  handlers:
+    - name: restart httpd
+      service: name=httpd state=restarted
+
+
