@@ -1,0 +1,26 @@
+---
+- hosts: localhost
+  connection: local
+  become: yes
+  become_user: root
+  become_method: su
+  tasks:
+    - name: comporser install
+      shell: curl -sS https://getcomposer.org/installer | php
+      args:
+        chdir: /root/
+        creates: composer.phar
+
+    - name: stat composer.phar
+      stat: path=/usr/local/bin/composer
+      register: composer_stat
+
+    - name: composerを参照できるようにする
+      command: cp /root/composer.phar /usr/local/bin/composer
+      when: composer_stat.stat.exists == false
+
+  handlers:
+    - name: restart httpd
+      service: name=httpd state=restarted
+
+
